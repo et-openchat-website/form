@@ -6,6 +6,11 @@
   const EMAIL_KEYS =
     /email|e-mail|mailaddress|mail_address|メールアドレス|連絡先メール|登録用メール/i;
 
+  // 個人情報・表示しない項目
+  const PRIVATE_KEYS = new Set([
+    "question_35"
+  ]);
+
   const OMIT_KEYS = new Set(["created_at"]);
 
   let supabase = null;
@@ -75,8 +80,7 @@
 
     question_33: "ご意見・感想をご自由にお書きください。",
     question_34: "その他、ご質問・ご要望などがあればお書きください。",
-    question_35:
-      "個別での回答を希望する場合は、メールアドレスを入力してください。",
+    question_35: "個別での回答を希望する場合のメールアドレス",
     question_36: "利用規約・プライバシーポリシーに同意する"
   };
 
@@ -89,15 +93,22 @@
     if (v === null || v === undefined || v === "") {
       return "（未回答）";
     }
+
     if (Array.isArray(v)) return v.join("、");
     if (typeof v === "object") return JSON.stringify(v);
+
     return String(v);
   }
 
+  // メールアドレスなどの非表示項目を除外する
   function visibleEntries(row) {
-    return Object.entries(row).filter(
-      ([k]) => !EMAIL_KEYS.test(k) && !OMIT_KEYS.has(k)
-    );
+    return Object.entries(row).filter(([k]) => {
+      return (
+        !PRIVATE_KEYS.has(k) &&
+        !EMAIL_KEYS.test(k) &&
+        !OMIT_KEYS.has(k)
+      );
+    });
   }
 
   function labelFor(key) {
@@ -106,7 +117,9 @@
 
   function formatDate(v) {
     if (!v) return "日時不明";
+
     const d = new Date(v);
+
     return Number.isNaN(d.getTime())
       ? String(v)
       : d.toLocaleString("ja-JP");
@@ -220,9 +233,9 @@
       const summary = document.createElement("td");
 
       const entries = visibleEntries(row).filter(
-        ([k]) =>
+        ([k, v]) =>
           !["response_key", "submitted_at"].includes(k) &&
-          displayValue(row[k]) !== "（未回答）"
+          displayValue(v) !== "（未回答）"
       );
 
       summary.className = "answer-summary";
@@ -321,7 +334,15 @@
 
     target.replaceChildren();
 
-    if (!key) return;
+    // 念のため、非表示項目は集計対象にしない
+    if (
+      !key ||
+      PRIVATE_KEYS.has(key) ||
+      EMAIL_KEYS.test(key) ||
+      OMIT_KEYS.has(key)
+    ) {
+      return;
+    }
 
     const counts = new Map();
 
