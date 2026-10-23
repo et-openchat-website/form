@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>ET利用者アンケート管理サイト</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div><strong>ET利用者アンケート管理サイト</strong><div class="muted">運営メンバー専用</div></div>
+    <button id="logoutBtn" class="secondary hidden" type="button">ログアウト</button>
+  </header>
+  <main>
+    <section id="loginPanel" class="panel login-panel hidden">
+      <h1>ログイン</h1>
+      <p>共通パスワードを入力してください。</p>
+      <form id="loginForm">
+        <label for="password">共通パスワード</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+        <button type="submit">ログイン</button>
+      </form>
+      <p id="loginError" class="error" role="alert"></p>
+      <div class="access-links"><button class="link-button" data-open-admin type="button">管理者はこちらから管理パネルへログイン</button></div>
+    </section>
+
+    <section id="adminLoginPanel" class="panel login-panel hidden">
+      <h1>管理者ログイン</h1>
+      <p>Supabase Authに登録された管理者専用アカウントでログインしてください。</p>
+      <form id="adminLoginForm">
+        <label for="adminEmail">管理者メールアドレス</label>
+        <input id="adminEmail" type="email" autocomplete="username" required>
+        <label for="adminPassword">管理者パスワード</label>
+        <input id="adminPassword" type="password" autocomplete="current-password" required>
+        <button type="submit">管理パネルへログイン</button>
+      </form>
+      <p id="adminLoginError" class="error" role="alert"></p>
+      <div class="access-links"><button id="backToLoginBtn" class="link-button" type="button">通常のログインへ戻る</button></div>
+    </section>
+
+    <section id="maintenancePanel" class="panel restriction-panel hidden" role="status">
+      <h1>メンテナンス中</h1>
+      <p class="restriction-message">現在サーバーメンテナンス中です。復旧までしばらくお待ちください。</p>
+      <button class="link-button" data-open-admin type="button">管理者はこちらから管理パネルへログイン</button>
+    </section>
+
+    <section id="blockedPanel" class="panel restriction-panel hidden" role="status">
+      <h1>フォーム閲覧禁止</h1>
+      <p class="restriction-message">現在管理者によりフォームの閲覧が禁止されています。</p>
+      <button class="link-button" data-open-admin type="button">管理者はこちらから管理パネルへログイン</button>
+    </section>
+
+    <section id="setupErrorPanel" class="panel restriction-panel hidden" role="alert">
+      <h1>接続設定を確認してください</h1>
+      <p id="setupErrorMessage" class="error"></p>
+      <button class="link-button" data-open-admin type="button">管理者はこちらから管理パネルへログイン</button>
+    </section>
+
+    <section id="dashboard" class="hidden">
+      <div class="section-head dashboard-toolbar">
+        <div id="adminBadge" class="pill green-pill hidden">管理者モード</div>
+        <div class="toolbar-actions">
+          <button id="refreshBtn" class="secondary" type="button">再読み込み</button>
+        </div>
+      </div>
+
+      <section id="adminPanel" class="panel admin-panel hidden">
+        <div class="section-head"><div><h2>管理パネル</h2><p class="muted">公開・閲覧制限を個別に切り替えます。</p></div></div>
+        <div class="mode-controls">
+          <article class="mode-card">
+            <div><strong>メンテナンスモード</strong><p class="muted">一般利用者のログイン前にメンテナンス画面を表示します。</p><span id="maintenanceState" class="mode-state">状態を読み込み中</span></div>
+            <button id="maintenanceToggle" type="button" disabled>読み込み中…</button>
+          </article>
+          <article class="mode-card">
+            <div><strong>フォーム閲覧禁止モード</strong><p class="muted">一般利用者に回答・グラフ・集計を表示しません。</p><span id="blockedState" class="mode-state">状態を読み込み中</span></div>
+            <button id="blockedToggle" type="button" disabled>読み込み中…</button>
+          </article>
+        </div>
+        <p id="modeStatus" class="status" role="status"></p>
+      </section>
+
+      <div id="status" class="status" role="status"></div>
+      <div class="stats">
+        <article class="stat"><span>取得した回答数</span><strong id="totalCount">0</strong></article>
+        <article class="stat"><span>回答一覧件数</span><strong id="shownCount">0</strong></article>
+      </div>
+      <section class="panel response-list-panel">
+        <div class="section-head response-list-heading">
+          <div><h2>個別回答一覧</h2><p class="muted">一覧は必要なときだけ表示できます。</p></div>
+          <button id="toggleResponsesBtn" class="secondary" type="button" aria-expanded="false" aria-controls="responseListContent">個別回答一覧を表示</button>
+        </div>
+        <div id="responseListContent" class="hidden">
+          <div class="table-wrap">
+            <table><thead><tr><th>回答概要</th><th>操作</th></tr></thead><tbody id="responseRows"></tbody></table>
+          </div>
+        </div>
+      </section>
+      <section class="panel analytics-panel">
+        <div class="section-head analytics-heading">
+          <div>
+            <h2>回答分析</h2>
+            <p class="muted">選択式の回答はグラフで、自由記述・その他の回答は専用ボタンから確認できます。</p>
+          </div>
+          <span class="pill green-pill">自動集計</span>
+        </div>
+        <label for="aggregateField">分析する質問</label>
+        <select id="aggregateField"></select>
+        <div id="aggregateMeta" class="aggregate-meta"></div>
+        <div id="chartWrap" class="chart-wrap"><canvas id="aggregateChart" aria-label="回答の集計グラフ"></canvas></div>
+        <div id="aggregateResults" class="aggregate-list"></div>
+      </section>
+      <section id="detailPanel" class="panel hidden">
+        <div class="section-head"><h2>回答詳細</h2><button id="closeDetailBtn" class="secondary" type="button">閉じる</button></div>
+        <div id="detailContent"></div>
+      </section>
+    </section>
+  </main>
+
+  <div id="answerModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="answerModalTitle">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <section class="modal-card">
+      <div class="section-head modal-heading">
+        <div><p class="eyebrow">ET アンケート</p><h2 id="answerModalTitle">回答一覧</h2></div>
+        <button id="closeAnswerModalBtn" class="icon-close secondary" type="button" aria-label="閉じる">×</button>
+      </div>
+      <p id="answerModalDescription" class="muted"></p>
+      <div id="answerModalList" class="modal-answer-list"></div>
+    </section>
+  </div>
+
+  <footer>ET利用者アンケート管理サイト</footer>
+</body>
+</html>
