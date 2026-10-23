@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>ET利用者アンケート管理サイト</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div><strong>ET利用者アンケート管理サイト</strong><div class="muted">運営メンバー専用</div></div>
+    <button id="logoutBtn" class="secondary hidden" type="button">ログアウト</button>
+  </header>
+  <main>
+    <section id="loginPanel" class="panel login-panel">
+      <h1>ログイン</h1>
+      <p>共通パスワードを入力してください。</p>
+      <form id="loginForm">
+        <label for="password">共通パスワード</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+        <button type="submit">ログイン</button>
+      </form>
+      <p id="loginError" class="error" role="alert"></p>
+    </section>
+
+    <section id="dashboard" class="hidden">
+      <div class="section-head">
+        <button id="refreshBtn" class="secondary" type="button">再読み込み</button>
+      </div>
+      <div id="status" class="status" role="status"></div>
+      <div class="stats">
+        <article class="stat"><span>取得した回答数</span><strong id="totalCount">0</strong></article>
+        <article class="stat"><span>検索結果</span><strong id="shownCount">0</strong></article>
+      </div>
+      <section class="panel">
+        <label for="searchInput">回答を検索</label>
+        <input id="searchInput" type="search" placeholder="回答内容・質問名・回答キーで検索">
+        <div class="table-wrap">
+          <table><thead><tr><th>送信日時</th><th>概要</th><th>操作</th></tr></thead><tbody id="responseRows"></tbody></table>
+        </div>
+      </section>
+      <section class="panel analytics-panel">
+        <div class="section-head analytics-heading">
+          <div>
+            <h2>回答分析</h2>
+            <p class="muted">選択式の回答はグラフで、自由記述は回答一覧で確認できます。</p>
+          </div>
+          <span class="pill green-pill">自動集計</span>
+        </div>
+        <label for="aggregateField">分析する質問</label>
+        <select id="aggregateField"></select>
+        <div id="aggregateMeta" class="aggregate-meta"></div>
+        <div id="chartWrap" class="chart-wrap"><canvas id="aggregateChart" aria-label="回答の集計グラフ"></canvas></div>
+        <div id="aggregateResults" class="aggregate-list"></div>
+      </section>
+      <section id="detailPanel" class="panel hidden">
+        <div class="section-head"><h2>回答詳細</h2><button id="closeDetailBtn" class="secondary" type="button">閉じる</button></div>
+        <div id="detailContent"></div>
+      </section>
+    </section>
+  </main>
+
+  <div id="answerModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="answerModalTitle">
+    <div class="modal-backdrop" data-close-modal="true"></div>
+    <section class="modal-card">
+      <div class="section-head modal-heading">
+        <div>
+          <p class="eyebrow">ET アンケート</p>
+          <h2 id="answerModalTitle">回答一覧</h2>
+        </div>
+        <button id="closeAnswerModalBtn" class="icon-close secondary" type="button" aria-label="閉じる">×</button>
+      </div>
+      <p id="answerModalDescription" class="muted"></p>
+      <div id="answerModalList" class="modal-answer-list"></div>
+    </section>
+  </div>
+
+  <footer>ET利用者アンケート管理サイト</footer>
+</body>
+</html>
