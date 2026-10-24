@@ -1,0 +1,26 @@
+{
+  "id": "./",
+  "name": "ET利用者アンケート管理サイト",
+  "short_name": "ETアンケート",
+  "description": "ET利用者アンケートの管理サイトです。ログインと回答閲覧にはインターネット接続が必要です。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6fbf0",
+  "theme_color": "#2f5715",
+  "icons": [
+    {
+      "src": "assets/et-survey-favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/et-survey-pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
